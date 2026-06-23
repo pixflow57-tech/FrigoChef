@@ -32,7 +32,6 @@ export default function RecipesScreen() {
       const score = ingredients.length > 0 ? scoreRecipe(r, fridgeNames) : 50;
       return { recipe: r, score };
     })
-      .filter(({ score }) => score >= 0)
       .filter(({ recipe }) =>
         selectedMode === "tous" ? true : recipe.modes.includes(selectedMode as RecipeMode)
       )
@@ -45,12 +44,13 @@ export default function RecipesScreen() {
   const handleAddToShopping = (recipeId: string) => {
     const recipe = RECIPES.find((r) => r.id === recipeId);
     if (!recipe) return;
-    const fridgeNormalized = fridgeNames.map((n) => n.toLowerCase());
+    // Use the same smart matching as scoreRecipe
     const missing = recipe.ingredients.filter(
-      (ing) =>
-        !fridgeNormalized.some(
-          (f) => f.includes(ing.name.toLowerCase()) || ing.name.toLowerCase().includes(f)
-        )
+      (ing) => !fridgeNames.some((f) => {
+        const fn = f.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+        const rn = ing.name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+        return fn.includes(rn) || rn.includes(fn);
+      })
     );
     if (missing.length > 0) {
       addFromRecipe(missing.map((m) => ({ name: m.name, quantity: m.quantity })));
