@@ -11,7 +11,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import RecipeCard from "@/components/RecipeCard";
-import { RECIPE_MODES, RECIPES, scoreRecipe, type RecipeMode } from "@/constants/recipeData";
+import { RECIPE_MODES, RECIPES, getRecipeMatch, type RecipeMode } from "@/constants/recipeData";
 import { useFrigo } from "@/contexts/FrigoContext";
 import { useProfile } from "@/contexts/ProfileContext";
 import { useShopping } from "@/contexts/ShoppingContext";
@@ -26,35 +26,26 @@ export default function RecipesScreen() {
   const [selectedMode, setSelectedMode] = useState<RecipeMode | "tous">("tous");
 
   const fridgeNames = ingredients.map((i) => i.name);
+  const hasFridge = ingredients.length > 0;
 
   const scoredRecipes = useMemo(() => {
     return RECIPES.map((r) => {
-      const score = ingredients.length > 0 ? scoreRecipe(r, fridgeNames) : 50;
-      return { recipe: r, score };
+      const match = hasFridge ? getRecipeMatch(r, fridgeNames) : { score: 50, matched: [], missing: r.ingredients };
+      return { recipe: r, score: match.score, missing: match.missing };
     })
       .filter(({ recipe }) =>
         selectedMode === "tous" ? true : recipe.modes.includes(selectedMode as RecipeMode)
       )
       .sort((a, b) => b.score - a.score);
-  }, [ingredients, selectedMode, fridgeNames]);
+  }, [ingredients, selectedMode, fridgeNames, hasFridge]);
 
   const topPad = Platform.OS === "web" ? 67 + 16 : insets.top + 16;
   const botPad = Platform.OS === "web" ? 34 + 80 : 80;
 
   const handleAddToShopping = (recipeId: string) => {
-    const recipe = RECIPES.find((r) => r.id === recipeId);
-    if (!recipe) return;
-    // Use the same smart matching as scoreRecipe
-    const missing = recipe.ingredients.filter(
-      (ing) => !fridgeNames.some((f) => {
-        const fn = f.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
-        const rn = ing.name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
-        return fn.includes(rn) || rn.includes(fn);
-      })
-    );
-    if (missing.length > 0) {
-      addFromRecipe(missing.map((m) => ({ name: m.name, quantity: m.quantity })));
-    }
+    const item = scoredRecipes.find(({ recipe }) => recipe.id === recipeId);
+    if (!item || item.missing.length === 0) return;
+    addFromRecipe(item.missing.map((m) => ({ name: m.name, quantity: m.quantity })));
   };
 
   return (
@@ -146,7 +137,9 @@ export default function RecipesScreen() {
           renderItem={({ item }) => (
             <RecipeCard
               recipe={item.recipe}
-              matchScore={ingredients.length > 0 ? Math.max(0, Math.round((item.score / 60) * 100)) : 0}
+              matchScore={item.score}
+              missingIngredients={item.missing}
+              hasFridge={hasFridge}
               onAddToShopping={() => handleAddToShopping(item.recipe.id)}
             />
           )}

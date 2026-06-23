@@ -187,39 +187,62 @@ function matchByCategory(fridgeItems: string[], recipeTag: string): boolean {
   return fridgeItems.some(fi => categoryWords.some(cw => matchIngredients(fi, cw)));
 }
 
+export interface RecipeMatch {
+  /** 0–100: % of recipe ingredients already in the fridge */
+  score: number;
+  /** Ingredients you already have */
+  matched: RecipeIngredient[];
+  /** Ingredients missing from your fridge */
+  missing: RecipeIngredient[];
+}
+
+function ingredientInFridge(ing: RecipeIngredient, fridgeIngredients: string[]): boolean {
+  return fridgeIngredients.some(fi => matchIngredients(fi, ing.name));
+}
+
 /**
- * Score a recipe against fridge contents.
- * Returns 0–100. Never -1.
- * Higher = better match.
+ * Returns a full match object: score (0-100), matched & missing ingredient lists.
+ * Score = matched / total * 100, with required ingredients weighted 2x optional.
+ */
+export function getRecipeMatch(recipe: Recipe, fridgeIngredients: string[]): RecipeMatch {
+  const matched: RecipeIngredient[] = [];
+  const missing: RecipeIngredient[] = [];
+
+  // Separate required vs optional for weighted scoring
+  const required = recipe.ingredients.filter(i => !i.optional);
+  const optional = recipe.ingredients.filter(i => i.optional);
+
+  let weightedMatched = 0;
+  const weightedTotal = required.length * 2 + optional.length;
+
+  for (const ing of required) {
+    if (ingredientInFridge(ing, fridgeIngredients)) {
+      matched.push(ing);
+      weightedMatched += 2;
+    } else {
+      missing.push(ing);
+    }
+  }
+  for (const ing of optional) {
+    if (ingredientInFridge(ing, fridgeIngredients)) {
+      matched.push(ing);
+      weightedMatched += 1;
+    } else {
+      missing.push(ing);
+    }
+  }
+
+  const score = weightedTotal === 0 ? 100 : Math.round((weightedMatched / weightedTotal) * 100);
+  return { score, matched, missing };
+}
+
+/**
+ * Legacy scalar scorer used by recipes tab sort.
+ * Returns 0–100. With empty fridge returns 50.
  */
 export function scoreRecipe(recipe: Recipe, fridgeIngredients: string[]): number {
   if (fridgeIngredients.length === 0) return 50;
-
-  const required = recipe.ingredients.filter((i) => !i.optional);
-  const optional = recipe.ingredients.filter((i) => i.optional);
-
-  let requiredHit = 0;
-  let optionalHit = 0;
-
-  for (const ing of required) {
-    const matched =
-      fridgeIngredients.some(fi => matchIngredients(fi, ing.name)) ||
-      (recipe.tags ?? []).some(tag => matchByCategory(fridgeIngredients, tag));
-    if (matched) requiredHit++;
-  }
-
-  for (const ing of optional) {
-    const matched = fridgeIngredients.some(fi => matchIngredients(fi, ing.name));
-    if (matched) optionalHit++;
-  }
-
-  const reqWeight = 70;
-  const optWeight = 30;
-
-  const reqScore = required.length > 0 ? (requiredHit / required.length) * reqWeight : reqWeight;
-  const optScore = optional.length > 0 ? (optionalHit / optional.length) * optWeight : 0;
-
-  return Math.round(reqScore + optScore);
+  return getRecipeMatch(recipe, fridgeIngredients).score;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
