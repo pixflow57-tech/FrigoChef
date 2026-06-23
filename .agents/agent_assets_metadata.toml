@@ -1,0 +1,26 @@
+uploads = []
+outputs = []
+
+[[generated]]
+id = "wilKgeW5iDJmGOQj5P67i"
+uri = "file://artifacts/frigo-malin/assets/images/icon.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "fZCWNUWr6cClEgcr72hot"
+uri = "file://artifacts/frigo-malin/assets/images/hero_food.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "K9YwdiZxuIq21wwx-DQd5"
+uri = "file://artifacts/frigo-malin/assets/images/recipe_pasta.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "hqKmYOutVSL_DweznwqAN"
+uri = "file://artifacts/frigo-malin/assets/images/recipe_salad.png"
+type = "image"
+title = "generated_image"

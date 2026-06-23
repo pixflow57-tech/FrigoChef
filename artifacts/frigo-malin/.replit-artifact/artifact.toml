@@ -1,0 +1,27 @@
+kind = "mobile"
+previewPath = "/"
+title = "Frigo Malin"
+version = "1.0.0"
+id = "artifacts/frigo-malin"
+router = "expo-domain"
+
+[[integratedSkills]]
+name = "expo"
+version = "1.0.0"
+
+[[services]]
+ensurePreviewReachable = "/status"
+name = "expo"
+paths = [ "/" ]
+localPort = 22226
+
+[services.development]
+run = "pnpm --filter @workspace/frigo-malin run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/frigo-malin", "run", "build" ]
+run = [ "pnpm", "--filter", "@workspace/frigo-malin", "run", "serve" ]
+
+[services.env]
+PORT = "22226"
+BASE_PATH = "/"

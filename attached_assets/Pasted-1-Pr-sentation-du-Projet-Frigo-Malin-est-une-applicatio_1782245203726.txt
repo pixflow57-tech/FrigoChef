@@ -1,0 +1,119 @@
+1. Présentation du Projet
+Frigo Malin est une application mobile innovante qui transforme la gestion quotidienne des restes alimentaires en une expérience culinaire simple, intelligente et plaisante.
+Grâce à une assistance IA puissante et intégrée, l’application permet aux utilisateurs de savoir en quelques secondes quoi cuisiner avec ce qu’ils ont déjà dans leur réfrigérateur, tout en réduisant le gaspillage alimentaire et en adaptant les suggestions à leur mode de vie.
+Slogan proposé : « Zéro gâchis, maximum plaisir. Votre frigo devient votre meilleur chef. »
+2. Objectifs
+Objectifs principaux :
+
+Réduire significativement le gaspillage alimentaire domestique.
+Simplifier la prise de décision culinaire quotidienne.
+Offrir une expérience personnalisée et contextuelle grâce à l’IA.
+Créer une communauté bienveillante autour du partage de recettes créatives et anti-gaspillage.
+Devenir l’application de référence pour une cuisine intelligente, saine et économique.
+
+Objectifs secondaires :
+
+Accompagner les utilisateurs dans leurs objectifs nutritionnels (budget, sport, famille, régimes spécifiques).
+Promouvoir une alimentation consciente et durable.
+Générer une rétention forte grâce à l’IA contextuelle et aux fonctionnalités sociales.
+
+3. Public Cible
+
+Familles occupées (25-45 ans)
+Personnes soucieuses de leur budget et/ou de l’environnement
+Sportifs et adeptes d’une alimentation contrôlée
+Parents cherchant des recettes adaptées aux enfants
+Célibataires et jeunes actifs qui veulent cuisiner vite et bien
+Utilisateurs sensibles au zéro déchet
+
+4. Fonctionnalités Principales
+4.1. Inventaire du Réfrigérateur (Core Feature)
+
+Saisie intelligente :
+Photo du frigo ou des ingrédients (IA de vision par ordinateur : reconnaissance automatique des aliments, quantités estimées, dates de péremption).
+Saisie manuelle rapide avec suggestions auto-complétées et catégories (légumes, protéines, laitages, etc.).
+Ajout vocal (dictée).
+Historique et inventaires multiples (frigo principal, congélateur, placards).
+
+Mise à jour automatique des quantités et détection des dates de péremption.
+
+4.2. Suggestions de Recettes Intelligentes (IA)
+
+Moteur de recommandation IA avancé :
+Analyse en temps réel des ingrédients disponibles (avec priorité aux produits près de péremption).
+Prise en compte du profil utilisateur (goûts, allergies, objectifs nutritionnels, niveau de cuisine, temps disponible, équipements).
+
+Modes de recettes personnalisés (filtrables et combinables) :
+Mode Fin de mois : recettes ultra-économiques, maximisation des ingrédients existants.
+Mode Sportif : prise de masse, sèche, maintien, récupération (avec macros calculées).
+Mode Famille / Enfant : recettes ludiques, attractives pour les enfants, équilibrées.
+Mode Rapide (< 20 min), Mode Gourmet, Mode Végé / Vegan, Mode Anti-Gaspillage.
+
+Affichage clair : temps de préparation, difficulté, coût estimé, score anti-gaspillage, infos nutritionnelles détaillées.
+
+4.3. Liste de Courses Automatique
+
+Génération en un clic des ingrédients manquants.
+Tri intelligent (par rayon de supermarché, prix, alternatives moins chères).
+Intégration possible avec applications de courses (Drive, listes partagées).
+Suggestions d’alternatives ou de substitutions.
+
+4.4. Fonctionnalités Sociales & Communautaires
+
+Partage de recettes : publication simple d’une recette issue de son frigo (« J’ai cuisiné ça avec mes restes ! »).
+Flux communautaire : découverte de recettes populaires, tendances anti-gaspillage, défis communautaires.
+Recettes collaboratives : possibilité de suggérer des variantes ou des améliorations.
+Groupes privés : familles, colocataires, clubs sportifs, régimes spécifiques (sans gluten, diabète, etc.).
+Système de likes, commentaires et « J’ai testé » avec photos avant/après.
+
+4.5. Fonctionnalités Additionnelles (Phase 2 & 3)
+
+Planification de repas hebdomadaire avec génération IA.
+Notifications intelligentes (« Vos tomates vont bientôt périmer – voici 3 idées »).
+Suivi statistique personnel : gaspillage évité, économies réalisées, impact carbone.
+Gamification : badges, niveaux, défis (« Zéro gâchis du mois »).
+Intégration calendrier et rappels.
+Mode sombre, accessibilité renforcée, multilingue (FR/EN au minimum).
+
+5. Expérience Utilisateur & Design
+
+Interface moderne, chaleureuse et intuitive (tons verts et orangés apaisants, photos appétissantes).
+Navigation fluide en moins de 3 clics pour une suggestion de recette.
+Onboarding ludique et rapide.
+Design responsive et optimisé pour tous les écrans (mobile-first).
+Accessibilité : WCAG 2.1, support voix, gros caractères.
+
+6. Architecture Technique & IA
+
+Frontend : React Native ou Flutter (cross-platform).
+Backend : scalable (Node.js / Python ou Firebase).
+IA Intégrée :
+Vision par ordinateur (Google ML Kit, OpenAI Vision, ou modèle custom).
+Modèle de langage dédié (fine-tuné sur recettes, nutrition, anti-gaspillage).
+Personnalisation via machine learning (profil utilisateur).
+Possibilité d’IA locale pour les suggestions basiques (confidentialité).
+
+Sécurité et confidentialité des données (RGPD) : les photos de frigo sont traitées de manière anonymisée et supprimables facilement.
+
+7. Modèle Économique
+
+Freemium :
+Version gratuite généreuse.
+Abonnement Premium : suggestions illimitées, IA avancée, statistiques détaillées, suppression publicités, groupes privés illimités.
+
+Partenariats : supermarchés, marques alimentaires, applications de livraison.
+
+8. Exigences Non Fonctionnelles
+
+Performance : suggestions en moins de 3 secondes.
+Disponibilité : 99,9 %.
+Sécurité : authentification sécurisée, chiffrement des données.
+Scalabilité : support de centaines de milliers d’utilisateurs.
+Maintenance : mises à jour régulières du modèle IA.
+
+9. Phases de Développement Recommandées
+
+MVP : Inventaire (photo + manuel), suggestions IA basiques, liste de courses, modes principaux.
+V1 : Fonctionnalités sociales, personnalisation avancée, gamification.
+V2 : Planification repas, intégrations tierces, IA encore plus contextuelle.
+Évolutions : Recettes générées par IA en temps réel, réalité augmentée, etc.
