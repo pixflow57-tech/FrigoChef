@@ -23,6 +23,10 @@ function NativeTabLayout() {
         <Icon sf={{ default: "cart", selected: "cart.fill" }} />
         <Label>Courses</Label>
       </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="chef">
+        <Icon sf={{ default: "sparkles", selected: "sparkles" }} />
+        <Label>Chef IA</Label>
+      </NativeTabs.Trigger>
       <NativeTabs.Trigger name="profile">
         <Icon sf={{ default: "person.circle", selected: "person.circle.fill" }} />
         <Label>Profil</Label>
@@ -103,6 +107,18 @@ function ClassicTabLayout() {
               <SymbolView name="cart" tintColor={color} size={24} />
             ) : (
               <Feather name="shopping-cart" size={22} color={color} />
+            ),
+        }}
+      />
+      <Tabs.Screen
+        name="chef"
+        options={{
+          title: "Chef IA",
+          tabBarIcon: ({ color }) =>
+            isIOS ? (
+              <SymbolView name="sparkles" tintColor={color} size={24} />
+            ) : (
+              <Feather name="zap" size={22} color={color} />
             ),
         }}
       />
