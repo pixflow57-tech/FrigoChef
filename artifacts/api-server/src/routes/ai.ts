@@ -72,7 +72,19 @@ Règles :
     res.json({ recipe });
   } catch (err) {
     req.log.error({ err }, "AI recipe generation failed");
-    res.status(500).json({ error: "Erreur lors de la génération de la recette" });
+    const e = err as { status?: number; code?: string };
+    if (e.status === 429 || e.code === "insufficient_quota") {
+      res.status(402).json({
+        error:
+          "Quota OpenAI insuffisant. Ajoutez des crédits sur platform.openai.com → Billing pour activer le Chef IA.",
+      });
+      return;
+    }
+    if (e.status === 401) {
+      res.status(401).json({ error: "Clé API OpenAI invalide. Vérifiez votre clé dans les secrets." });
+      return;
+    }
+    res.status(500).json({ error: "Erreur lors de la génération de la recette. Réessayez." });
   }
 });
 
