@@ -1,8 +1,6 @@
 import { Feather } from "@expo/vector-icons";
 import React, { useState } from "react";
 import {
-  ActivityIndicator,
-  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -12,21 +10,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFrigo } from "@/contexts/FrigoContext";
 import { useColors } from "@/hooks/useColors";
-
-interface AIRecipe {
-  title: string;
-  description: string;
-  prepTime: number;
-  cookTime: number;
-  servings: number;
-  difficulty: 1 | 2 | 3;
-  modes: string[];
-  ingredients: { name: string; quantity: string; optional?: boolean }[];
-  steps: string[];
-  tips?: string;
-  nutritionScore: number;
-  antiWasteScore: number;
-}
+import { composeRecipe, type ComposedRecipe } from "@/constants/recipeComposer";
 
 const DIFFICULTY_LABEL: Record<number, string> = {
   1: "Facile",
@@ -34,20 +18,13 @@ const DIFFICULTY_LABEL: Record<number, string> = {
   3: "Difficile",
 };
 
-const API_BASE =
-  Platform.OS === "web"
-    ? "/api"
-    : process.env["EXPO_PUBLIC_API_URL"] ?? "http://localhost:80/api";
-
 export default function ChefScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const { ingredients } = useFrigo();
 
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [recipe, setRecipe] = useState<AIRecipe | null>(null);
+  const [recipe, setRecipe] = useState<ComposedRecipe | null>(null);
 
   const toggleIngredient = (id: string) => {
     setSelectedIds((prev) => {
@@ -58,46 +35,14 @@ export default function ChefScreen() {
     });
   };
 
-  const selectAll = () => {
-    setSelectedIds(new Set(ingredients.map((i) => i.id)));
-  };
+  const selectAll = () => setSelectedIds(new Set(ingredients.map((i) => i.id)));
+  const clearAll = () => setSelectedIds(new Set());
 
-  const clearAll = () => {
-    setSelectedIds(new Set());
-  };
-
-  const generate = async () => {
+  const generate = () => {
     const chosen = ingredients.filter((i) => selectedIds.has(i.id));
     if (chosen.length === 0) return;
-
-    setLoading(true);
-    setError(null);
-    setRecipe(null);
-
-    try {
-      const body = JSON.stringify({
-        ingredients: chosen.map((i) => `${i.name} (${i.quantity} ${i.unit})`),
-        preferences: "cuisine française, recette pratique du quotidien",
-      });
-
-      const res = await fetch(`${API_BASE}/ai/recipe`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body,
-      });
-
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error((data as { error?: string }).error ?? "Erreur serveur");
-      }
-
-      const data = (await res.json()) as { recipe: AIRecipe };
-      setRecipe(data.recipe);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Erreur inconnue");
-    } finally {
-      setLoading(false);
-    }
+    const result = composeRecipe(chosen);
+    setRecipe(result);
   };
 
   const s = styles(colors);
@@ -108,11 +53,11 @@ export default function ChefScreen() {
       <View style={s.header}>
         <View>
           <Text style={s.headerTitle}>Chef IA</Text>
-          <Text style={s.headerSub}>Recette personnalisée depuis votre frigo</Text>
+          <Text style={s.headerSub}>Recette composée depuis votre frigo</Text>
         </View>
-        <View style={s.aiBadge}>
-          <Feather name="zap" size={14} color={colors.accentForeground} />
-          <Text style={s.aiLabel}>GPT-4o</Text>
+        <View style={s.badge}>
+          <Feather name="zap" size={13} color="#fff" />
+          <Text style={s.badgeText}>Local</Text>
         </View>
       </View>
 
@@ -130,10 +75,10 @@ export default function ChefScreen() {
               </Text>
               <View style={s.sectionActions}>
                 <TouchableOpacity onPress={selectAll} style={s.textBtn}>
-                  <Text style={s.textBtnLabel}>Tout</Text>
+                  <Text style={s.textBtnPrimary}>Tout</Text>
                 </TouchableOpacity>
                 <TouchableOpacity onPress={clearAll} style={s.textBtn}>
-                  <Text style={s.textBtnLabelMuted}>Aucun</Text>
+                  <Text style={s.textBtnMuted}>Aucun</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -142,7 +87,7 @@ export default function ChefScreen() {
               <View style={s.emptyBox}>
                 <Feather name="inbox" size={32} color={colors.mutedForeground} />
                 <Text style={s.emptyText}>
-                  Votre frigo est vide. Ajoutez des ingrédients dans l'onglet Frigo.
+                  Votre frigo est vide.{"\n"}Ajoutez des ingrédients dans l'onglet Frigo.
                 </Text>
               </View>
             ) : (
@@ -158,20 +103,13 @@ export default function ChefScreen() {
                     >
                       <Feather
                         name={selected ? "check-circle" : "circle"}
-                        size={15}
-                        color={selected ? colors.primaryForeground : colors.mutedForeground}
-                        style={s.chipIcon}
+                        size={14}
+                        color={selected ? "#fff" : colors.mutedForeground}
                       />
-                      <Text
-                        style={[s.chipText, selected && s.chipTextSelected]}
-                        numberOfLines={1}
-                      >
+                      <Text style={[s.chipText, selected && s.chipTextSelected]} numberOfLines={1}>
                         {ing.name}
                       </Text>
-                      <Text
-                        style={[s.chipQty, selected && s.chipQtySelected]}
-                        numberOfLines={1}
-                      >
+                      <Text style={[s.chipQty, selected && s.chipQtySelected]} numberOfLines={1}>
                         {ing.quantity} {ing.unit}
                       </Text>
                     </TouchableOpacity>
@@ -182,50 +120,40 @@ export default function ChefScreen() {
           </>
         )}
 
-        {/* Error */}
-        {error && (
-          <View style={s.errorBox}>
-            <Feather name="alert-circle" size={18} color={colors.destructive} />
-            <Text style={s.errorText}>{error}</Text>
-          </View>
-        )}
-
-        {/* Loading */}
-        {loading && (
-          <View style={s.loadingBox}>
-            <ActivityIndicator color={colors.primary} size="large" />
-            <Text style={s.loadingText}>Le chef IA prépare votre recette…</Text>
-          </View>
-        )}
-
         {/* Generated Recipe */}
-        {recipe && !loading && (
+        {recipe && (
           <View>
-            {/* Back button */}
-            <TouchableOpacity
-              style={s.backBtn}
-              onPress={() => {
-                setRecipe(null);
-                setError(null);
-              }}
-            >
+            {/* Back */}
+            <TouchableOpacity style={s.backBtn} onPress={() => setRecipe(null)}>
               <Feather name="arrow-left" size={16} color={colors.primary} />
               <Text style={s.backBtnText}>Nouvelle recette</Text>
             </TouchableOpacity>
 
-            {/* Recipe card */}
+            {/* Usage banner */}
+            <View style={s.usageBanner}>
+              <Feather name="check-circle" size={15} color={colors.primary} />
+              <Text style={s.usageText}>
+                <Text style={s.usageBold}>{recipe.usedCount}</Text> ingrédient
+                {recipe.usedCount > 1 ? "s" : ""} de votre frigo utilisé
+                {recipe.usedCount > 1 ? "s" : ""}
+              </Text>
+              <View style={s.antiWastePill}>
+                <Text style={s.antiWasteText}>Anti-gaspi {recipe.antiWasteScore}%</Text>
+              </View>
+            </View>
+
+            {/* Recipe header card */}
             <View style={s.recipeCard}>
-              {/* Title & meta */}
               <View style={s.recipeHeader}>
-                <View style={s.aiGeneratedBadge}>
-                  <Feather name="zap" size={11} color={colors.accent} />
-                  <Text style={s.aiGeneratedLabel}>Généré par IA</Text>
+                <View style={s.composedBadge}>
+                  <Feather name="cpu" size={11} color={colors.primary} />
+                  <Text style={s.composedBadgeText}>Composée par le Chef</Text>
                 </View>
                 <Text style={s.recipeTitle}>{recipe.title}</Text>
                 <Text style={s.recipeDesc}>{recipe.description}</Text>
               </View>
 
-              {/* Stats row */}
+              {/* Stats */}
               <View style={s.statsRow}>
                 <View style={s.statItem}>
                   <Feather name="clock" size={14} color={colors.mutedForeground} />
@@ -246,16 +174,14 @@ export default function ChefScreen() {
                 </View>
                 <View style={s.statDivider} />
                 <View style={s.statItem}>
-                  <Feather name="leaf" size={14} color={colors.primary} />
-                  <Text style={[s.statValue, { color: colors.primary }]}>
-                    {recipe.antiWasteScore}%
-                  </Text>
-                  <Text style={s.statLabel}>Anti-gaspi</Text>
+                  <Feather name="heart" size={14} color={colors.primary} />
+                  <Text style={[s.statValue, { color: colors.primary }]}>{recipe.nutritionScore}%</Text>
+                  <Text style={s.statLabel}>Nutrition</Text>
                 </View>
               </View>
 
               {/* Modes */}
-              {recipe.modes?.length > 0 && (
+              {recipe.modes.length > 0 && (
                 <View style={s.modesRow}>
                   {recipe.modes.map((m) => (
                     <View key={m} style={s.modeTag}>
@@ -268,37 +194,47 @@ export default function ChefScreen() {
 
             {/* Ingredients */}
             <View style={s.section}>
-              <Text style={s.sectionH2}>Ingrédients</Text>
+              <Text style={s.sectionH2}>
+                <Feather name="list" size={15} color={colors.foreground} />{"  "}Ingrédients
+              </Text>
               {recipe.ingredients.map((ing, i) => (
                 <View key={i} style={s.ingRow}>
-                  <View style={[s.ingDot, ing.optional && s.ingDotOpt]} />
+                  <View style={[s.ingDot, ing.optional ? s.ingDotOpt : s.ingDotRequired]} />
                   <Text style={s.ingName}>{ing.name}</Text>
                   <Text style={s.ingQty}>{ing.quantity}</Text>
-                  {ing.optional && <Text style={s.ingOpt}>(optionnel)</Text>}
+                  {ing.optional && <Text style={s.ingOpt}>(opt.)</Text>}
                 </View>
               ))}
             </View>
 
             {/* Steps */}
             <View style={s.section}>
-              <Text style={s.sectionH2}>Préparation</Text>
+              <Text style={s.sectionH2}>
+                <Feather name="play-circle" size={15} color={colors.foreground} />{"  "}Préparation
+              </Text>
               {recipe.steps.map((step, i) => (
                 <View key={i} style={s.stepRow}>
                   <View style={s.stepNum}>
                     <Text style={s.stepNumText}>{i + 1}</Text>
                   </View>
-                  <Text style={s.stepText}>{step.replace(/^Étape \d+ ?:? ?/i, "")}</Text>
+                  <Text style={s.stepText}>{step}</Text>
                 </View>
               ))}
             </View>
 
             {/* Tips */}
-            {recipe.tips && (
+            {recipe.tips ? (
               <View style={s.tipsBox}>
                 <Feather name="star" size={15} color={colors.accent} />
                 <Text style={s.tipsText}>{recipe.tips}</Text>
               </View>
-            )}
+            ) : null}
+
+            {/* Regenerate */}
+            <TouchableOpacity style={s.regenBtn} onPress={generate} activeOpacity={0.8}>
+              <Feather name="refresh-cw" size={16} color={colors.primary} />
+              <Text style={s.regenBtnText}>Varier la recette</Text>
+            </TouchableOpacity>
           </View>
         )}
       </ScrollView>
@@ -307,25 +243,16 @@ export default function ChefScreen() {
       {!recipe && (
         <View style={[s.footer, { paddingBottom: insets.bottom + 16 }]}>
           <TouchableOpacity
-            style={[
-              s.generateBtn,
-              (selectedIds.size === 0 || loading) && s.generateBtnDisabled,
-            ]}
+            style={[s.generateBtn, selectedIds.size === 0 && s.generateBtnDisabled]}
             onPress={generate}
-            disabled={selectedIds.size === 0 || loading}
+            disabled={selectedIds.size === 0}
             activeOpacity={0.85}
           >
-            {loading ? (
-              <ActivityIndicator color="#fff" size="small" />
-            ) : (
-              <Feather name="zap" size={18} color="#fff" />
-            )}
+            <Feather name="zap" size={18} color="#fff" />
             <Text style={s.generateBtnText}>
-              {loading
-                ? "Génération en cours…"
-                : selectedIds.size === 0
-                  ? "Sélectionnez des ingrédients"
-                  : `Générer avec ${selectedIds.size} ingrédient${selectedIds.size > 1 ? "s" : ""}`}
+              {selectedIds.size === 0
+                ? "Sélectionnez des ingrédients"
+                : `Composer une recette avec ${selectedIds.size} ingrédient${selectedIds.size > 1 ? "s" : ""}`}
             </Text>
           </TouchableOpacity>
         </View>
@@ -343,60 +270,33 @@ function styles(colors: any) {
       justifyContent: "space-between",
       alignItems: "center",
       paddingHorizontal: 20,
-      paddingVertical: 16,
+      paddingVertical: 14,
       borderBottomWidth: 1,
       borderBottomColor: colors.border,
       backgroundColor: colors.card,
     },
-    headerTitle: {
-      fontSize: 22,
-      fontFamily: "Inter_700Bold",
-      color: colors.foreground,
-    },
-    headerSub: {
-      fontSize: 12,
-      fontFamily: "Inter_400Regular",
-      color: colors.mutedForeground,
-      marginTop: 2,
-    },
-    aiBadge: {
+    headerTitle: { fontSize: 22, fontFamily: "Inter_700Bold", color: colors.foreground },
+    headerSub: { fontSize: 12, fontFamily: "Inter_400Regular", color: colors.mutedForeground, marginTop: 2 },
+    badge: {
       flexDirection: "row",
       alignItems: "center",
-      gap: 4,
-      backgroundColor: colors.accent,
+      gap: 5,
+      backgroundColor: colors.primary,
       paddingHorizontal: 10,
       paddingVertical: 5,
       borderRadius: 20,
     },
-    aiLabel: {
-      color: colors.accentForeground,
-      fontSize: 12,
-      fontFamily: "Inter_600SemiBold",
-    },
+    badgeText: { color: "#fff", fontSize: 12, fontFamily: "Inter_600SemiBold" },
     scroll: { flex: 1 },
-    content: { padding: 20, gap: 16 },
-    sectionHeader: {
-      flexDirection: "row",
-      justifyContent: "space-between",
-      alignItems: "center",
-    },
-    sectionTitle: {
-      fontSize: 14,
-      fontFamily: "Inter_600SemiBold",
-      color: colors.foreground,
-    },
-    sectionActions: { flexDirection: "row", gap: 8 },
+    content: { padding: 20, gap: 14 },
+
+    sectionHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+    sectionTitle: { fontSize: 14, fontFamily: "Inter_600SemiBold", color: colors.foreground },
+    sectionActions: { flexDirection: "row", gap: 6 },
     textBtn: { paddingVertical: 4, paddingHorizontal: 8 },
-    textBtnLabel: {
-      fontSize: 13,
-      fontFamily: "Inter_500Medium",
-      color: colors.primary,
-    },
-    textBtnLabelMuted: {
-      fontSize: 13,
-      fontFamily: "Inter_500Medium",
-      color: colors.mutedForeground,
-    },
+    textBtnPrimary: { fontSize: 13, fontFamily: "Inter_500Medium", color: colors.primary },
+    textBtnMuted: { fontSize: 13, fontFamily: "Inter_500Medium", color: colors.mutedForeground },
+
     emptyBox: {
       alignItems: "center",
       gap: 12,
@@ -412,8 +312,10 @@ function styles(colors: any) {
       fontFamily: "Inter_400Regular",
       fontSize: 14,
       paddingHorizontal: 24,
+      lineHeight: 22,
     },
-    grid: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
+
+    grid: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
     chip: {
       flexDirection: "row",
       alignItems: "center",
@@ -421,97 +323,61 @@ function styles(colors: any) {
       borderWidth: 1.5,
       borderColor: colors.border,
       borderRadius: 24,
-      paddingHorizontal: 12,
+      paddingHorizontal: 11,
       paddingVertical: 8,
-      gap: 6,
+      gap: 5,
       maxWidth: "48%",
     },
-    chipSelected: {
-      backgroundColor: colors.primary,
-      borderColor: colors.primary,
-    },
-    chipIcon: {},
-    chipText: {
-      fontSize: 13,
-      fontFamily: "Inter_500Medium",
-      color: colors.foreground,
-      flexShrink: 1,
-    },
-    chipTextSelected: { color: colors.primaryForeground },
-    chipQty: {
-      fontSize: 11,
-      fontFamily: "Inter_400Regular",
-      color: colors.mutedForeground,
-    },
-    chipQtySelected: { color: "rgba(255,255,255,0.8)" },
-    errorBox: {
+    chipSelected: { backgroundColor: colors.primary, borderColor: colors.primary },
+    chipText: { fontSize: 13, fontFamily: "Inter_500Medium", color: colors.foreground, flexShrink: 1 },
+    chipTextSelected: { color: "#fff" },
+    chipQty: { fontSize: 11, fontFamily: "Inter_400Regular", color: colors.mutedForeground },
+    chipQtySelected: { color: "rgba(255,255,255,0.75)" },
+
+    backBtn: { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 12 },
+    backBtnText: { color: colors.primary, fontFamily: "Inter_500Medium", fontSize: 14 },
+
+    usageBanner: {
       flexDirection: "row",
       alignItems: "center",
-      gap: 10,
-      backgroundColor: "#FFF5F5",
+      gap: 8,
+      backgroundColor: colors.successLight,
       borderRadius: 12,
-      padding: 14,
-      borderWidth: 1,
-      borderColor: "#FED7D7",
+      padding: 12,
+      marginBottom: 2,
     },
-    errorText: {
-      flex: 1,
-      color: colors.destructive,
-      fontSize: 14,
-      fontFamily: "Inter_400Regular",
+    usageText: { flex: 1, fontSize: 13, fontFamily: "Inter_400Regular", color: colors.foreground },
+    usageBold: { fontFamily: "Inter_600SemiBold" },
+    antiWastePill: {
+      backgroundColor: colors.primary,
+      borderRadius: 10,
+      paddingHorizontal: 8,
+      paddingVertical: 3,
     },
-    loadingBox: { alignItems: "center", gap: 16, paddingVertical: 40 },
-    loadingText: {
-      color: colors.mutedForeground,
-      fontFamily: "Inter_400Regular",
-      fontSize: 14,
-    },
-    backBtn: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: 6,
-      marginBottom: 16,
-    },
-    backBtnText: {
-      color: colors.primary,
-      fontFamily: "Inter_500Medium",
-      fontSize: 14,
-    },
+    antiWasteText: { color: "#fff", fontSize: 11, fontFamily: "Inter_600SemiBold" },
+
     recipeCard: {
       backgroundColor: colors.card,
       borderRadius: 16,
       borderWidth: 1,
       borderColor: colors.border,
       overflow: "hidden",
-      marginBottom: 16,
     },
-    recipeHeader: { padding: 20, gap: 8 },
-    aiGeneratedBadge: {
+    recipeHeader: { padding: 18, gap: 8 },
+    composedBadge: {
       flexDirection: "row",
       alignItems: "center",
       gap: 4,
       alignSelf: "flex-start",
-      backgroundColor: colors.accentLight,
+      backgroundColor: colors.secondary,
       paddingHorizontal: 8,
       paddingVertical: 3,
       borderRadius: 10,
     },
-    aiGeneratedLabel: {
-      fontSize: 11,
-      fontFamily: "Inter_500Medium",
-      color: colors.accent,
-    },
-    recipeTitle: {
-      fontSize: 20,
-      fontFamily: "Inter_700Bold",
-      color: colors.foreground,
-    },
-    recipeDesc: {
-      fontSize: 14,
-      fontFamily: "Inter_400Regular",
-      color: colors.mutedForeground,
-      lineHeight: 20,
-    },
+    composedBadgeText: { fontSize: 11, fontFamily: "Inter_500Medium", color: colors.primary },
+    recipeTitle: { fontSize: 20, fontFamily: "Inter_700Bold", color: colors.foreground },
+    recipeDesc: { fontSize: 14, fontFamily: "Inter_400Regular", color: colors.mutedForeground, lineHeight: 20 },
+
     statsRow: {
       flexDirection: "row",
       borderTopWidth: 1,
@@ -519,23 +385,16 @@ function styles(colors: any) {
       paddingVertical: 12,
     },
     statItem: { flex: 1, alignItems: "center", gap: 2 },
-    statValue: {
-      fontSize: 13,
-      fontFamily: "Inter_600SemiBold",
-      color: colors.foreground,
-    },
-    statLabel: {
-      fontSize: 10,
-      fontFamily: "Inter_400Regular",
-      color: colors.mutedForeground,
-    },
+    statValue: { fontSize: 13, fontFamily: "Inter_600SemiBold", color: colors.foreground },
+    statLabel: { fontSize: 10, fontFamily: "Inter_400Regular", color: colors.mutedForeground },
     statDivider: { width: 1, backgroundColor: colors.border },
+
     modesRow: {
       flexDirection: "row",
       flexWrap: "wrap",
       gap: 6,
-      paddingHorizontal: 20,
-      paddingBottom: 16,
+      paddingHorizontal: 18,
+      paddingBottom: 14,
     },
     modeTag: {
       backgroundColor: colors.secondary,
@@ -543,82 +402,36 @@ function styles(colors: any) {
       paddingHorizontal: 10,
       paddingVertical: 4,
     },
-    modeTagText: {
-      fontSize: 11,
-      fontFamily: "Inter_500Medium",
-      color: colors.primary,
-    },
+    modeTagText: { fontSize: 11, fontFamily: "Inter_500Medium", color: colors.primary },
+
     section: {
       backgroundColor: colors.card,
       borderRadius: 16,
       borderWidth: 1,
       borderColor: colors.border,
-      padding: 20,
-      marginBottom: 12,
+      padding: 18,
       gap: 10,
     },
-    sectionH2: {
-      fontSize: 16,
-      fontFamily: "Inter_600SemiBold",
-      color: colors.foreground,
-      marginBottom: 4,
-    },
-    ingRow: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: 10,
-    },
-    ingDot: {
-      width: 7,
-      height: 7,
-      borderRadius: 4,
-      backgroundColor: colors.primary,
-    },
+    sectionH2: { fontSize: 16, fontFamily: "Inter_600SemiBold", color: colors.foreground, marginBottom: 4 },
+
+    ingRow: { flexDirection: "row", alignItems: "center", gap: 10 },
+    ingDot: { width: 7, height: 7, borderRadius: 4, flexShrink: 0 },
+    ingDotRequired: { backgroundColor: colors.primary },
     ingDotOpt: { backgroundColor: colors.border },
-    ingName: {
-      flex: 1,
-      fontSize: 14,
-      fontFamily: "Inter_400Regular",
-      color: colors.foreground,
-    },
-    ingQty: {
-      fontSize: 13,
-      fontFamily: "Inter_500Medium",
-      color: colors.mutedForeground,
-    },
-    ingOpt: {
-      fontSize: 11,
-      fontFamily: "Inter_400Regular",
-      color: colors.mutedForeground,
-      fontStyle: "italic",
-    },
-    stepRow: {
-      flexDirection: "row",
-      gap: 12,
-      alignItems: "flex-start",
-    },
+    ingName: { flex: 1, fontSize: 14, fontFamily: "Inter_400Regular", color: colors.foreground },
+    ingQty: { fontSize: 13, fontFamily: "Inter_500Medium", color: colors.mutedForeground },
+    ingOpt: { fontSize: 11, fontFamily: "Inter_400Regular", color: colors.mutedForeground, fontStyle: "italic" },
+
+    stepRow: { flexDirection: "row", gap: 12, alignItems: "flex-start" },
     stepNum: {
-      width: 26,
-      height: 26,
-      borderRadius: 13,
+      width: 26, height: 26, borderRadius: 13,
       backgroundColor: colors.primary,
-      alignItems: "center",
-      justifyContent: "center",
-      flexShrink: 0,
-      marginTop: 1,
+      alignItems: "center", justifyContent: "center",
+      flexShrink: 0, marginTop: 1,
     },
-    stepNumText: {
-      color: colors.primaryForeground,
-      fontSize: 12,
-      fontFamily: "Inter_700Bold",
-    },
-    stepText: {
-      flex: 1,
-      fontSize: 14,
-      fontFamily: "Inter_400Regular",
-      color: colors.foreground,
-      lineHeight: 22,
-    },
+    stepNumText: { color: "#fff", fontSize: 12, fontFamily: "Inter_700Bold" },
+    stepText: { flex: 1, fontSize: 14, fontFamily: "Inter_400Regular", color: colors.foreground, lineHeight: 22 },
+
     tipsBox: {
       flexDirection: "row",
       alignItems: "flex-start",
@@ -630,13 +443,23 @@ function styles(colors: any) {
       borderColor: colors.accent + "33",
     },
     tipsText: {
-      flex: 1,
-      fontSize: 13,
-      fontFamily: "Inter_400Regular",
-      color: colors.foreground,
-      lineHeight: 20,
-      fontStyle: "italic",
+      flex: 1, fontSize: 13, fontFamily: "Inter_400Regular",
+      color: colors.foreground, lineHeight: 20, fontStyle: "italic",
     },
+
+    regenBtn: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 8,
+      borderWidth: 1.5,
+      borderColor: colors.primary,
+      borderRadius: 14,
+      paddingVertical: 14,
+      marginTop: 4,
+    },
+    regenBtnText: { color: colors.primary, fontSize: 15, fontFamily: "Inter_600SemiBold" },
+
     footer: {
       padding: 16,
       paddingTop: 12,
@@ -652,13 +475,8 @@ function styles(colors: any) {
       backgroundColor: colors.accent,
       borderRadius: 14,
       paddingVertical: 16,
-      paddingHorizontal: 24,
     },
     generateBtnDisabled: { backgroundColor: colors.muted },
-    generateBtnText: {
-      color: "#fff",
-      fontSize: 16,
-      fontFamily: "Inter_600SemiBold",
-    },
+    generateBtnText: { color: "#fff", fontSize: 16, fontFamily: "Inter_600SemiBold" },
   });
 }

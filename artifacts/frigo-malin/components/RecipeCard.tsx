@@ -9,7 +9,7 @@ import { useColors } from "@/hooks/useColors";
 const DIFFICULTY_LABELS = ["", "Facile", "Moyen", "Expert"];
 const DIFFICULTY_COLORS = ["", "#48BB78", "#F6AD55", "#FC8181"];
 
-const IMAGES: Record<string, unknown> = {
+const IMAGES: Record<string, number> = {
   pasta: require("@/assets/images/recipe_pasta.png"),
   salad: require("@/assets/images/recipe_salad.png"),
   hero: require("@/assets/images/hero_food.png"),
