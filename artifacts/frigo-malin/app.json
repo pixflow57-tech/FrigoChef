@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "Frigo Malin",
-    "slug": "frigo-malin",
+    "name": "FrigoChef",
+    "slug": "frigochef",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "frigo-malin",
+    "scheme": "frigochef",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
@@ -14,11 +14,14 @@
       "backgroundColor": "#F8FAF5"
     },
     "ios": {
-      "supportsTablet": false
+      "supportsTablet": false,
+      "bundleIdentifier": "com.frigochef.app"
     },
-    "android": {},
+    "android": {
+      "package": "com.frigochef.app"
+    },
     "web": {
-      "favicon": "./assets/images/icon.png"
+      "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
       [
